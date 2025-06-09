@@ -12,7 +12,7 @@ import matplotlib.pyplot as plt
 from matplotlib.font_manager import fontManager
 
 
-def load_fonts_from_directory(font_directory: str) -> None:
+def load_fonts_from_directory(directory: str) -> int:
     """
     Load custom fonts from a specified directory.
 
@@ -22,26 +22,25 @@ def load_fonts_from_directory(font_directory: str) -> None:
     Args:
         font_directory (str): Path to the directory containing font files
 
-    Raises:
-        None: Logs warnings if directory doesn't exist
+    Returns:
+        int: Number of fonts loaded.
 
     Example:
         >>> load_fonts_from_directory("/path/to/fonts")
     """
-    if not os.path.exists(font_directory):
-        logging.warning(f"Font directory '{font_directory}' does not exist.")
-        return
+    if not os.path.exists(directory):
+        logging.warning(f"Font directory '{directory}' does not exist.")
+        return 0
 
-    loaded_count = 0
-    for root, _, files in os.walk(font_directory):
-        for filename in files:
-            if filename.endswith((".otf", ".ttf")):
-                font_path = os.path.join(root, filename)
-                fontManager.addfont(font_path)
-                logging.debug(f"Loaded font: {filename}")
-                loaded_count += 1
+    count = 0
+    for root, _, files in os.walk(directory):
+        for file in files:
+            if file.endswith((".otf", ".ttf")):
+                fontManager.addfont(os.path.join(root, file))
+                logging.debug(f"Loaded font: {file}")
+                count += 1
 
-    logging.info(f"Successfully loaded {loaded_count} font(s) from {font_directory}")
+    return count
 
 
 def find_available_fonts(test_text: str, output_file: Optional[str] = None) -> Set[str]:
