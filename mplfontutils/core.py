@@ -20,7 +20,7 @@ def load_fonts_from_directory(directory: str) -> int:
     (.ttf and .otf) and adds them to matplotlib's font manager.
 
     Args:
-        font_directory (str): Path to the directory containing font files
+        directory (str): Path to the directory containing font files
 
     Returns:
         int: Number of fonts loaded.
@@ -43,67 +43,44 @@ def load_fonts_from_directory(directory: str) -> int:
     return count
 
 
+glyph_missing_pattern = re.compile(r"Glyph (\d+) \(.*\) missing from font\(s\) (.+)\.")
+
+
 def find_available_fonts(test_text: str, output_file: Optional[str] = None) -> Set[str]:
     """
-    Find available fonts that can display the given test text.
-
-    This function tests all available fonts in matplotlib's font manager
-    to see which ones can properly display the provided test text without
-    missing glyphs.
+    Find fonts that can display the given text.
 
     Args:
-        test_text (str): Text to test font compatibility with
-        output_file (str, optional): Path to save the font test visualization.
-                                   If None, no file is saved.
+        test_text (str): Text to test font compatibility.
+        output_file (str, optional): Path to save visualization.
 
     Returns:
-        Set[str]: Set of font names that can display the test text
-
-    Example:
-        >>> available_fonts = find_available_fonts("中文测试")
-        >>> print(f"Found {len(available_fonts)} compatible fonts")
-
-        >>> # Save visualization to file
-        >>> fonts = find_available_fonts("Hello 世界", "font_test.png")
+        Set[str]: Fonts compatible with the text.
     """
-    available_fonts = set()
+    fonts = set(fontManager.get_font_names())
 
+    # Create a figure to test font rendering
+    fig, ax = plt.subplots()
+    for font in fonts:
+        ax.text(0, 0, test_text, fontname=font)
+
+    # Render the figure to trigger warnings
     with warnings.catch_warnings(record=True) as caught_warnings:
         warnings.simplefilter("always")
-
-        # Test each font
-        font_names = fontManager.get_font_names()
-
-        # Add all fonts to test set first
-        for font_name in font_names:
-            available_fonts.add(font_name)
-
-        fig, ax = plt.subplots(figsize=(5, 1))
-
-        # Always test all fonts by rendering text
-        for i, font_name in enumerate(font_names):
-            y = 1 - i * 0.2
-
-            # Display font name and test text (this triggers font validation)
-            ax.text(0, y, font_name, fontsize=8)
-            ax.text(0.5, y, test_text, fontname=font_name, fontsize=8)
-
-        ax.set_axis_off()
         fig.canvas.draw()
+    plt.close(fig)
 
-        # Save figure only if output file is requested
-        if output_file:
-            fig.savefig(output_file, bbox_inches="tight", pad_inches=0.1, dpi=300)
+    fonts -= set(m.group(2) for m in (re.match(glyph_missing_pattern, str(w.message)) for w in caught_warnings) if m)
 
-        # Remove fonts that cannot display the test text
-        # Parse warnings to identify fonts with missing glyphs
-        for warning in caught_warnings:
-            warning_str = str(warning.message)
-            if match := re.match(r"Glyph (\d+) \(.*\) missing from font\(s\) (.+)\.", warning_str):
-                font_name = match.group(2)
-                if font_name in available_fonts:
-                    available_fonts.remove(font_name)
-                    logging.debug(f"Removed font '{font_name}' due to missing glyphs")
+    # Create visualization if output_file is provided
+    fs = 10  # Font size in points
+    w = fs / 100  # Convert font size to width
+    if output_file and fonts:
+        fig, ax = plt.subplots(figsize=(w * (max(map(len, fonts)) + 4), 2 * w))
+        for i, font in enumerate(fonts):
+            ax.text(0, i, font, fontsize=fs)
+            ax.text(1, i, test_text, fontname=font, fontsize=fs)
+        ax.set_axis_off()
+        fig.savefig(output_file, bbox_inches="tight", pad_inches=w, dpi=300)
 
-    logging.info(f"Found {len(available_fonts)} fonts compatible with text: '{test_text}'")
-    return available_fonts
+    return fonts

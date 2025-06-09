@@ -49,6 +49,9 @@ Examples:
             print()
             for font in sorted(available_fonts):
                 print(f"  • {font}")
+        else:
+            print("No compatible fonts found for the provided text.")
+
     except Exception as e:
         print(f"Error testing fonts: {e}")
         sys.exit(1)
