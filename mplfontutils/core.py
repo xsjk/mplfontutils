@@ -72,9 +72,6 @@ def find_available_fonts(test_text: str, output_file: Optional[str] = None) -> S
     with warnings.catch_warnings(record=True) as caught_warnings:
         warnings.simplefilter("always")
 
-        # Create figure for font testing
-        figure, ax = plt.subplots(figsize=(12, 8))
-
         # Test each font
         font_names = fontManager.get_font_names()
 
@@ -82,30 +79,22 @@ def find_available_fonts(test_text: str, output_file: Optional[str] = None) -> S
         for font_name in font_names:
             available_fonts.add(font_name)
 
-        # Create figure for font testing only if output file is requested
+        fig, ax = plt.subplots(figsize=(5, 1))
+
+        # Always test all fonts by rendering text
+        for i, font_name in enumerate(font_names):
+            y = 1 - i * 0.2
+
+            # Display font name and test text (this triggers font validation)
+            ax.text(0, y, font_name, fontsize=8)
+            ax.text(0.5, y, test_text, fontname=font_name, fontsize=8)
+
+        ax.set_axis_off()
+        fig.canvas.draw()
+
+        # Save figure only if output file is requested
         if output_file:
-            # Calculate figure size based on number of fonts
-            font_count = len(font_names)
-            figure_height = max(8, font_count * 0.3)  # Dynamic height
-            figure, ax = plt.subplots(figsize=(12, figure_height))
-
-            for i, font_name in enumerate(font_names):
-                y_position = 1 - i * (1.0 / font_count)  # Distribute evenly
-
-                # Display font name and test text
-                plt.text(0, y_position, font_name, fontsize=8, family="monospace")
-                plt.text(0.4, y_position, test_text, fontname=font_name, fontsize=8)
-
-            # Configure plot appearance
-            plt.xlim(0, 1)
-            plt.ylim(0, 1)
-            plt.axis("off")
-            plt.title(f"Font Compatibility Test: '{test_text}' ({font_count} fonts)", fontsize=14, pad=20)
-            plt.tight_layout()
-
-            plt.savefig(output_file, bbox_inches="tight", pad_inches=0.1, dpi=150)
-            print(f"Font test visualization saved to {output_file}")
-            plt.close(figure)
+            fig.savefig(output_file, bbox_inches="tight", pad_inches=0.1, dpi=300)
 
         # Remove fonts that cannot display the test text
         # Parse warnings to identify fonts with missing glyphs
