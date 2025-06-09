@@ -1,0 +1,19 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "mplfontutils"
+version = "0.1.0"
+description = "Utility package for testing and loading fonts in matplotlib"
+authors = [{ name = "xsjk", email = "xsjk17@outlook.com" }]
+readme = "README.md"
+requires-python = ">=3.8"
+dependencies = ["matplotlib>=3.0.0"]
+
+[project.urls]
+Homepage = "https://github.com/xsjk/mplfontutils"
+Repository = "https://github.com/xsjk/mplfontutils"
+
+[project.scripts]
+mplfontutils = "mplfontutils.__main__:main"
